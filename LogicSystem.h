@@ -1,5 +1,6 @@
 #pragma once
 #include "const.h"
+#include "CSession.h"
 
 class HttpConnection;
 
@@ -10,6 +11,7 @@ class LogicSystem :public Singleton<LogicSystem>
     friend class Singleton<LogicSystem>;
 public:
     ~LogicSystem();
+    void PostMsgToQue(shared_ptr < LogicNode> msg);
     //处理Get
     bool HandleGet(std::string, std::shared_ptr<HttpConnection>);
     //处理Get

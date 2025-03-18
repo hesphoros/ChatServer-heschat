@@ -21,10 +21,13 @@ public:
     boost::asio::io_context& GetIOService();
     void Stop();
 private:
-    AsioIOServicePool(std::size_t size = 2/*std::thread::hardware_concurrency()*/);
-    std::vector<IOService>  _ioServices;
-    std::vector<WorkPtr>    _works;
-   
-    std::vector<std::thread> _threads;
-    std::size_t              _nextIOService;
+    /// <summary>
+    /// hardware_concurrency : 获取当前系统的内核线程数
+    /// </summary>
+    /// <param name="size"></param>
+    AsioIOServicePool(std::size_t size = std::thread::hardware_concurrency());
+    std::vector<IOService>                         _ioServices;
+    std::vector<WorkPtr>                           _works;
+    std::vector<std::thread>                       _threads;
+    std::size_t                                    _nextIOService;
 };

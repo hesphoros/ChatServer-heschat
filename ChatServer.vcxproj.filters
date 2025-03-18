@@ -48,6 +48,12 @@
     <ClCompile Include="VerifyGrpcClient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CSession.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MsgNode.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsioIOServicePool.h">
@@ -84,6 +90,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="VerifyGrpcClient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSession.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MsgNode.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

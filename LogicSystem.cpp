@@ -2,10 +2,22 @@
 #include "HttpConnection.h"
 #include "VerifyGrpcClient.h"
 #include "RedisMgr.h"
+#include "CSession.h"
 
 
 LogicSystem::~LogicSystem()
 {
+}
+
+void LogicSystem::PostMsgToQue(shared_ptr < LogicNode> msg)
+{
+	std::unique_lock<std::mutex> unique_lk(_mutex);
+	_msg_que.push(msg);
+	//由0变为1则发送通知信号
+	if (_msg_que.size() == 1) {
+		unique_lk.unlock();
+		_consume.notify_one();
+	}
 }
 
 void LogicSystem::RegPost(std::string url, HttpHandler handler) {
