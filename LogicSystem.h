@@ -4,7 +4,7 @@
 
 class HttpConnection;
 
-typedef std::function<void(std::shared_ptr<HttpConnection>)> HttpHandler;
+typedef  function<void(shared_ptr<CSession>, const short& msg_id, const string& msg_data)> FunCallBack;
 
 class LogicSystem :public Singleton<LogicSystem>
 {
@@ -12,14 +12,21 @@ class LogicSystem :public Singleton<LogicSystem>
 public:
     ~LogicSystem();
     void PostMsgToQue(shared_ptr < LogicNode> msg);
-    //处理Get
-    bool HandleGet(std::string, std::shared_ptr<HttpConnection>);
-    //处理Get
-    void RegGet(std::string, HttpHandler handler);
-    void RegPost(std::string url, HttpHandler handler);
-    bool HandlePost(std::string path, std::shared_ptr<HttpConnection> con);
+    void LoginHandler(shared_ptr<CSession> session, const short& msg_id, const string& msg_data);
 private:
+    /// <summary>
+    /// 注册回调
+    /// </summary>
+    void RegisterCallBacks();
     LogicSystem();
-    std::map<std::string, HttpHandler> _post_handlers;
-    std::map<std::string, HttpHandler> _get_handlers;
+    void DealMsg();
+private:
+   
+    std::thread                                             _worker_thread;
+    std::queue<shared_ptr<LogicNode>>                       _msg_queue;
+    std::condition_variable                                 _con_var;
+    bool                                                    _b_stop;
+    std::mutex                                              _mutex;
+    std::map<short, FunCallBack>                            _fun_callbacks;
+
 };

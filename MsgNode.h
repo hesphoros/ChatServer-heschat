@@ -14,7 +14,7 @@ public:
 		_data[_total_len] = '\0';
 	}
 
-	~MsgNode() {
+	virtual ~MsgNode() {
 		std::cout << "destruct MsgNode" << endl;
 		delete[] _data;
 	}
