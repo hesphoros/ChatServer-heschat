@@ -18,9 +18,9 @@ public:
     /// </summary>
     /// <param name="ioc"></param> 上下文
     /// <param name="port"></param> 端口
-    CServer(boost::asio::io_context& ioc, unsigned short& port);
+    CServer(boost::asio::io_context& ioc, short& port);
     ~CServer();
-    void Start();
+   
     void ClearSession(std::string);
 private:
     void HandleAccept(shared_ptr<CSession>, const boost::system::error_code& error);

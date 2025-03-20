@@ -1,9 +1,9 @@
 #include "CServer.h"
-#include "HttpConnection.h"
+
 #include "AsioIOServicePool.h"
 
 // tcp::v4() = 0.0.0
-CServer::CServer(boost::asio::io_context& ioc, unsigned short& port) :_io_ctx(ioc),
+CServer::CServer(boost::asio::io_context& ioc, short& port) :_io_ctx(ioc), _port(port),
 	_acceptor(ioc, tcp::endpoint(tcp::v4(), port)) /* ,_socket(ioc)*/ 
 {
     std::cout << "Server start success, listen on port : " << _port << std::endl;
@@ -15,29 +15,18 @@ CServer::~CServer()
     std::cout <<"Server destruct listen on port" << _port << std::endl;
 }
 
-void CServer::Start()
-{
-    auto self = shared_from_this();
-    auto& io_context = AsioIOServicePool::GetInstance()->GetIOService();
-	std::shared_ptr<HttpConnection> new_connection = std::make_shared<HttpConnection>(io_context);
-    _acceptor.async_accept(new_connection->GetSocket(), [self,new_connection](beast::error_code ec) {
-        try {
-            //出错则放弃这个连接，继续监听新链接
-            if (ec) {
-                self->Start();
-                return;
-            }
 
-            //处理新链接，创建HpptConnection类管理新连接
-			new_connection->Start();
-            //继续监听
-            self->Start();
-        }
-        catch (std::exception& exp) {
-            std::cout << "exception is " << exp.what() << std::endl;
-            self->Start();
-        }
-    });
+void CServer::ClearSession(std::string uuid)
+{/*
+	if (_sessions.find(uuid) != _sessions.end()) {
+
+		UserMgr::GetInstance()->RmvUserSession(_sessions[uuid]->GetUserId());
+	}
+
+	{
+		lock_guard<mutex> lock(_mutex);
+		_sessions.erase(uuid);
+	}*/
 }
 
 void CServer::HandleAccept(shared_ptr<CSession> new_session , const boost::system::error_code& error)

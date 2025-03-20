@@ -22,7 +22,7 @@ GetChatServerRsp StatusGrpcClient::GetChatServer(int uid)
 
 LoginRsp StatusGrpcClient::Login(int uid, std::string token)
 {
-	/*ClientContext context;
+	ClientContext context;
 	LoginRsp reply;
 	LoginReq request;
 	request.set_uid(uid);
@@ -39,7 +39,7 @@ LoginRsp StatusGrpcClient::Login(int uid, std::string token)
 	else {
 		reply.set_error(ErrorCodes::RPCFailed);
 		return reply;
-	}*/
+	}
 }
 
 

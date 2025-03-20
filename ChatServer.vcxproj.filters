@@ -30,9 +30,6 @@
     <ClCompile Include="LogicSystem.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="HttpConnection.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="RedisMgr.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -63,6 +60,9 @@
     <ClCompile Include="MysqlMgr.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="UserMgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AsioIOServicePool.h">
@@ -81,9 +81,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Singleton.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="HttpConnection.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="RedisMgr.h">
@@ -116,5 +113,13 @@
     <ClInclude Include="MysqlMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="UserMgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.ini">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>

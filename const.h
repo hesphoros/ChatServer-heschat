@@ -26,6 +26,15 @@
 #include <cassert>
 
 
+#include <jdbc/mysql_driver.h>
+#include <jdbc/mysql_connection.h>
+#include <jdbc/cppconn/prepared_statement.h>
+#include <jdbc/cppconn/resultset.h>
+#include <jdbc/cppconn/statement.h>
+#include <jdbc/cppconn/exception.h>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 
 enum ErrorCodes {
@@ -37,7 +46,10 @@ enum ErrorCodes {
 	UserExist = 1005,  //用户已存在
 	PasswdErr = 1006,  //密码错误
 	EmailNotMatch = 1007,  //邮箱不匹配
-	PasswdInvalid = 1008,  //密码不合法
+	PasswdUpnvalid = 1008,  //更新密码失败
+	PasswdInvalid = 1009,   //密码更新失败
+	TokenInvalid = 1010,   //Token 失效
+	UidInvalid = 1011,  //uid 无效
 };
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
@@ -59,7 +71,7 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 
 enum MSG_IDS {
-	MSG_CHAT_LOGIN = 1005, //用户登陆
+	MSG_CHAT_LOGIN     = 1005, //用户登陆
 	MSG_CHAT_LOGIN_RSP = 1006, //用户登陆回包
 	ID_SEARCH_USER_REQ = 1007, //用户搜索请求
 	ID_SEARCH_USER_RSP = 1008, //搜索用户回包

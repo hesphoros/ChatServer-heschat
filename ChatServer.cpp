@@ -24,8 +24,11 @@ int main()
 			});
 
 		auto port_str = cfg["SelfServer"]["Port"];
-		unsigned short port = static_cast<unsigned short>(atoi(port_str.c_str()));  // 将端口号转换为 unsigned short
-		CServer s(io_cxt, port);  // 传递 io_cxt 的引用和 port 变量
+		short port = (atoi(port_str.c_str()));
+		std::cout << "The self server port is " << port << std::endl;
+		
+		CServer s(io_cxt, port);
+		
 		io_cxt.run();
 	}
 	catch (std::exception& e) {
