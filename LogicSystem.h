@@ -1,6 +1,7 @@
 #pragma once
 #include "const.h"
 #include "CSession.h"
+#include "MysqlDao.h"
 
 class HttpConnection;
 
@@ -28,5 +29,5 @@ private:
     bool                                                    _b_stop;
     std::mutex                                              _mutex;
     std::map<short, FunCallBack>                            _fun_callbacks;
-
+    std::map<int, std::shared_ptr<UserInfo>>                _users;
 };

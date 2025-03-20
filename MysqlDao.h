@@ -3,69 +3,112 @@
 
 
 struct UserInfo {
+    UserInfo() :name(""), pwd(""), uid(0), email(""), nick(""), desc(""), sex(0), icon(""), back("") {}
     std::string name;
     std::string pwd;
     int uid;
     std::string email;
+	std::string nick;
+	std::string desc;
+	int sex;
+	std::string icon;
+	std::string back;
+};
+
+
+class SqlConnection {
+public:
+	SqlConnection(sql::Connection* con, int64_t lasttime) :_con(con), _last_oper_time(lasttime) {}
+	std::unique_ptr<sql::Connection> _con;
+	int64_t _last_oper_time;
 };
 
 
 
 class MySqlPool {
 public:
-    MySqlPool(const std::string& url, const std::string& user, const std::string& pass, const std::string& schema, int poolSize)
-        : url_(url), user_(user), pass_(pass), schema_(schema), poolSize_(poolSize), b_stop_(false) {
-        try {
-            for (int i = 0; i < poolSize_; ++i) {
-                sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
-                std::unique_ptr<sql::Connection> con(driver->connect(url_, user_, pass_));
-                con->setSchema(schema_);
-                // 打印连接成功信息
-                std::cout << "Connection successful! url: " << url_ << "user" << user_ 
-                        << "password" << pass_ << "schema_" << schema_ <<std::endl;
-                // 如果 URL 中包含端口信息，可以解析并打印
-                size_t portPos = url_.find_last_of(':');
-                if (portPos != std::string::npos) {
-                    std::string port = url_.substr(portPos + 1);
-                    std::cout << "Port: " << port << std::endl;
-                }
+
+	MySqlPool(const std::string& url, const std::string& user, const std::string& pass, const std::string& schema, int poolSize)
+		: url_(url), user_(user), pass_(pass), schema_(schema), poolSize_(poolSize), b_stop_(false) {
+		try {
+			for (int i = 0; i < poolSize_; ++i) {
+				sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+				auto* con = driver->connect(url_, user_, pass_);
+				con->setSchema(schema_);
+				// 获取当前时间戳
+				auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+				// 将时间戳转换为秒
+				long long timestamp = std::chrono::duration_cast<std::chrono::seconds>(currentTime).count();
+				pool_.push(std::make_unique<SqlConnection>(con, timestamp));
+			}
+
+			_check_thread = std::thread([this]() {
+				while (!b_stop_) {
+					checkConnection();
+					std::this_thread::sleep_for(std::chrono::seconds(60));
+				}
+				});
+
+			_check_thread.detach();
+		}
+		catch (sql::SQLException& e) {
+			// 处理异常
+			std::cout << "mysql pool init failed, error is " << e.what() << std::endl;
+		}
+	}
 
 
-                pool_.push(std::move(con));
-            }
-        }
-        catch (sql::SQLException& e) {
-            // 处理异常
-            std::cout << "mysql pool init failed" << std::endl;
-            // 处理异常
-            std::cout << "MySQL pool initialization failed: " << e.what() << std::endl;
-            std::cout << "URL: " << url_ << std::endl;
-            std::cout << "User: " << user_ << std::endl;
-            std::cout << "Password: " << pass_ << std::endl;
+	void checkConnection() {
+		std::lock_guard<std::mutex> guard(mutex_);
+		int poolsize = pool_.size();
+		// 获取当前时间戳
+		auto currentTime = std::chrono::system_clock::now().time_since_epoch();
+		// 将时间戳转换为秒
+		long long timestamp = std::chrono::duration_cast<std::chrono::seconds>(currentTime).count();
+		for (int i = 0; i < poolsize; i++) {
+			auto con = std::move(pool_.front());
+			pool_.pop();
+			Defer defer([this, &con]() {
+				pool_.push(std::move(con));
+				});
 
-            // 如果 URL 中包含端口信息，可以解析并打印
-            size_t portPos = url_.find_last_of(':');
-            if (portPos != std::string::npos) {
-                std::string port = url_.substr(portPos + 1);
-                std::cout << "Port: " << port << std::endl;
-            }
-        }
+			if (timestamp - con->_last_oper_time < 5) {
+				continue;
+			}
+
+			try {
+				std::unique_ptr<sql::Statement> stmt(con->_con->createStatement());
+				stmt->executeQuery("SELECT 1");
+				con->_last_oper_time = timestamp;
+				//std::cout << "execute timer alive query , cur is " << timestamp << std::endl;
+			}
+			catch (sql::SQLException& e) {
+				std::cout << "Error keeping connection alive: " << e.what() << std::endl;
+				// 重新创建连接并替换旧的连接
+				sql::mysql::MySQL_Driver* driver = sql::mysql::get_mysql_driver_instance();
+				auto* newcon = driver->connect(url_, user_, pass_);
+				newcon->setSchema(schema_);
+				con->_con.reset(newcon);
+				con->_last_oper_time = timestamp;
+			}
+		}
+	}
+
+    std::unique_ptr<SqlConnection> getConnection() {
+		std::unique_lock<std::mutex> lock(mutex_);
+		cond_.wait(lock, [this] {
+			if (b_stop_) {
+				return true;
+			}
+			return !pool_.empty(); });
+		if (b_stop_) {
+			return nullptr;
+		}
+		std::unique_ptr<SqlConnection> con(std::move(pool_.front()));
+		pool_.pop();
+		return con;
     }
-    std::unique_ptr<sql::Connection> getConnection() {
-        std::unique_lock<std::mutex> lock(mutex_);
-        cond_.wait(lock, [this] {
-            if (b_stop_) {
-                return true;
-            }
-            return !pool_.empty(); });
-        if (b_stop_) {
-            return nullptr;
-        }
-        std::unique_ptr<sql::Connection> con(std::move(pool_.front()));
-        pool_.pop();
-        return con;
-    }
-    void returnConnection(std::unique_ptr<sql::Connection> con) {
+    void returnConnection(std::unique_ptr<SqlConnection> con) {
         std::unique_lock<std::mutex> lock(mutex_);
         if (b_stop_) {
             return;
@@ -89,11 +132,15 @@ private:
     std::string pass_;
     std::string schema_;
     int poolSize_;
-    std::queue<std::unique_ptr<sql::Connection>> pool_;
+    //std::queue<std::unique_ptr<sql::Connection>> pool_;
+    std::queue<std::unique_ptr<SqlConnection>> pool_;
     std::mutex mutex_;
     std::condition_variable cond_;
     std::atomic<bool> b_stop_;
+	std::thread _check_thread;
 };
+
+
 
 class MysqlDao
 {
@@ -105,6 +152,8 @@ public:
     bool UpdatePwd(const std::string& name, const std::string& newpwd);
     bool CheckPwdWithEmail(const std::string& email, const std::string& pwd, UserInfo& userInfo);
     bool CheckPwdWithUsername(const std::string& name, const std::string& pwd, UserInfo& userInfo); 
+	std::shared_ptr<UserInfo> GetUser(int uid);
+	std::shared_ptr<UserInfo> GetUser(std::string name);
 private:
     std::unique_ptr<MySqlPool> pool_;
 };
